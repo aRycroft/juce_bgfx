@@ -5,34 +5,60 @@
 #include "MainComponent.h"
 
 MainComponent::MainComponent()
-    : label({}, "This is a text label"),
-      button("Text button")
 {
-    setSize (600, 400);
+    setSize(600, 400);
+    setAudioChannels(0, 2);
 
-    label.setJustificationType(juce::Justification::centred);
-    addAndMakeVisible(label);
-    addAndMakeVisible(button);
+    addAndMakeVisible(myComp);
 
-    setBackgroundColour (Colour(0x1F, 0x1F, 0x1F));
-    enableRenderStats();
-    startPeriodicRepaint();
+    setBackgroundColour(Colour(0x1F, 0x1F, 0x1F));
+    startPeriodicRepaint(60);
 }
 
 MainComponent::~MainComponent()
 {
+    shutdownAudio();
 }
 
-void MainComponent::paint (juce::Graphics& g)
+void MainComponent::paint(juce::Graphics &g)
 {
     g.fillAll(Colours::black);
 }
 
 void MainComponent::resized()
 {
-    auto bounds {getLocalBounds()};
+    auto bounds{getLocalBounds()};
+    myComp.setBounds(bounds);
+}
 
-    button.setBounds(bounds.removeFromBottom(80).reduced(20));
-     label.setBounds(bounds.removeFromBottom(40));
+void MainComponent::prepareToPlay(int samplesPerBlockExpected, double newSampleRate)
+{
+    sampleRate = newSampleRate;
+    expectedSamplesPerBlock = samplesPerBlockExpected;
+    phaseDelta = (float) (MathConstants<double>::twoPi * frequency / sampleRate);
+}
 
+void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill)
+{
+    bufferToFill.clearActiveBufferRegion();
+    auto originalPhase = phase;
+
+    for (auto chan = 0; chan < bufferToFill.buffer->getNumChannels(); ++chan)
+    {
+        phase = originalPhase;
+
+        auto *channelData = bufferToFill.buffer->getWritePointer(chan, bufferToFill.startSample);
+
+        for (auto i = 0; i < bufferToFill.numSamples; ++i)
+        {
+            channelData[i] = 0.5 * std::sin(phase);
+
+            // increment the phase step for the next sample
+            phase = std::fmod(phase + phaseDelta, MathConstants<float>::twoPi);
+        }
+    }
+}
+
+void MainComponent::releaseResources()
+{
 }

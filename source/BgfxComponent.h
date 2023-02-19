@@ -15,7 +15,7 @@
     The actual rendering must be performed in renderFrame()
     method of inherited component.
 */
-class BgfxComponent : public juce::Component,
+class BgfxComponent : public juce::AudioAppComponent, 
                       private juce::Timer
 {
 public:
