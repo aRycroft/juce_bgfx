@@ -12,17 +12,20 @@
 //==============================================================================
 MyPluginAudioProcessor::MyPluginAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
-     : AudioProcessor (BusesProperties()
-                     #if ! JucePlugin_IsMidiEffect
-                      #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-                      #endif
-                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
-                     #endif
-                       )
+    : AudioProcessor(BusesProperties()
+#if !JucePlugin_IsMidiEffect
+#if !JucePlugin_IsSynth
+                         .withInput("Input", juce::AudioChannelSet::stereo(), true)
 #endif
-,apvts(*this, nullptr, "Parameters", createParameterLayout())
+                         .withOutput("Output", juce::AudioChannelSet::stereo(), true)
+#endif
+                         )
+#endif
+      ,
+      apvts(*this, nullptr, "Parameters", createParameterLayout())
 {
+    formatManager.registerBasicFormats();
+    grains.addArray({Grain(), Grain(), });
 }
 
 MyPluginAudioProcessor::~MyPluginAudioProcessor()
@@ -37,29 +40,29 @@ const juce::String MyPluginAudioProcessor::getName() const
 
 bool MyPluginAudioProcessor::acceptsMidi() const
 {
-   #if JucePlugin_WantsMidiInput
+#if JucePlugin_WantsMidiInput
     return true;
-   #else
+#else
     return false;
-   #endif
+#endif
 }
 
 bool MyPluginAudioProcessor::producesMidi() const
 {
-   #if JucePlugin_ProducesMidiOutput
+#if JucePlugin_ProducesMidiOutput
     return true;
-   #else
+#else
     return false;
-   #endif
+#endif
 }
 
 bool MyPluginAudioProcessor::isMidiEffect() const
 {
-   #if JucePlugin_IsMidiEffect
+#if JucePlugin_IsMidiEffect
     return true;
-   #else
+#else
     return false;
-   #endif
+#endif
 }
 
 double MyPluginAudioProcessor::getTailLengthSeconds() const
@@ -69,8 +72,8 @@ double MyPluginAudioProcessor::getTailLengthSeconds() const
 
 int MyPluginAudioProcessor::getNumPrograms()
 {
-    return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
-                // so this should be at least 1, even if you're not really implementing programs.
+    return 1; // NB: some hosts don't cope very well if you tell them there are 0 programs,
+              // so this should be at least 1, even if you're not really implementing programs.
 }
 
 int MyPluginAudioProcessor::getCurrentProgram()
@@ -78,22 +81,43 @@ int MyPluginAudioProcessor::getCurrentProgram()
     return 0;
 }
 
-void MyPluginAudioProcessor::setCurrentProgram (int index)
+void MyPluginAudioProcessor::setCurrentProgram(int index)
 {
 }
 
-const juce::String MyPluginAudioProcessor::getProgramName (int index)
+const juce::String MyPluginAudioProcessor::getProgramName(int index)
 {
     return {};
 }
 
-void MyPluginAudioProcessor::changeProgramName (int index, const juce::String& newName)
+void MyPluginAudioProcessor::changeProgramName(int index, const juce::String &newName)
 {
 }
 
 //==============================================================================
-void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+void MyPluginAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
+    auto file = File("~/Music/Music/Media.localized/Music/Unknown Artist/Unknown Album/647498__josefpres__piano-loops-014-octave-down-long-loop-120-bpm.wav");
+    std::unique_ptr<juce::AudioFormatReader> reader(formatManager.createReaderFor(file));
+    audioBuffer.setSize((int)reader->numChannels, (int)reader->lengthInSamples);
+    reader->read(&audioBuffer,                 // [5]
+                 0,                            //  [5.1]
+                 (int)reader->lengthInSamples, //  [5.2]
+                 0,                            //  [5.3]
+                 true,                         //  [5.4]
+                 true);
+
+    for (auto& grain : grains)
+    {
+        grain.setSampleRate(sampleRate);
+        grain.setGrainLength(50000);
+        grain.setAudioBuffer(&audioBuffer);
+        grain.startGrain();
+    }
+    testGrain.setSampleRate(sampleRate);
+    testGrain.setGrainLength(5000);
+    testGrain.setAudioBuffer(&audioBuffer);
+    testGrain.startGrain();
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
 }
@@ -105,38 +129,35 @@ void MyPluginAudioProcessor::releaseResources()
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
-bool MyPluginAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+bool MyPluginAudioProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const
 {
-  #if JucePlugin_IsMidiEffect
-    juce::ignoreUnused (layouts);
+#if JucePlugin_IsMidiEffect
+    juce::ignoreUnused(layouts);
     return true;
-  #else
+#else
     // This is the place where you check if the layout is supported.
     // In this template code we only support mono or stereo.
     // Some plugin hosts, such as certain GarageBand versions, will only
     // load plugins that support stereo bus layouts.
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-     && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono() && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
         return false;
 
-    // This checks if the input layout matches the output layout
-   #if ! JucePlugin_IsSynth
+        // This checks if the input layout matches the output layout
+#if !JucePlugin_IsSynth
     if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
         return false;
-   #endif
+#endif
 
     return true;
-  #endif
+#endif
 }
 #endif
 
-void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void MyPluginAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuffer &midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
+    auto totalNumInputChannels = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
-
-    //apvts.getParameter("pos1")->setValueNotifyingHost(counter++ / 1000.0f);
 
     // In case we have more outputs than inputs, this code clears any output
     // channels that didn't contain input data, (because these aren't
@@ -145,7 +166,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // when they first compile a plugin, but obviously you don't need to keep
     // this code if your algorithm always overwrites all the output channels.
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
+        buffer.clear(i, 0, buffer.getNumSamples());
 
     // This is the place where you'd normally do the guts of your plugin's
     // audio processing...
@@ -153,12 +174,13 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // the samples and the outer loop is handling the channels.
     // Alternatively, you can process the samples with the channels
     // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
 
+        for (auto& grain : grains)
+        {
+            grain.fillBuffer(buffer, buffer.getNumSamples());
+        }
         // ..do something to the data...
-    }
+    
 }
 
 //==============================================================================
@@ -167,20 +189,20 @@ bool MyPluginAudioProcessor::hasEditor() const
     return true; // (change this to false if you choose to not supply an editor)
 }
 
-juce::AudioProcessorEditor* MyPluginAudioProcessor::createEditor()
+juce::AudioProcessorEditor *MyPluginAudioProcessor::createEditor()
 {
-    return new MyPluginAudioProcessorEditor (*this, apvts);
+    return new MyPluginAudioProcessorEditor(*this, apvts);
 }
 
 //==============================================================================
-void MyPluginAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
+void MyPluginAudioProcessor::getStateInformation(juce::MemoryBlock &destData)
 {
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
 }
 
-void MyPluginAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+void MyPluginAudioProcessor::setStateInformation(const void *data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
@@ -188,7 +210,7 @@ void MyPluginAudioProcessor::setStateInformation (const void* data, int sizeInBy
 
 //==============================================================================
 // This creates new instances of the plugin..
-juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
+juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter()
 {
     return new MyPluginAudioProcessor();
 }

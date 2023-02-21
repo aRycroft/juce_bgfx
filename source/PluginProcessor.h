@@ -9,6 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "Grain.h"
 
 //==============================================================================
 /**
@@ -67,6 +68,10 @@ private:
       };
     }
     int counter{0};
+    Array<Grain> grains;
+    Grain testGrain;
+    AudioSampleBuffer audioBuffer;
     AudioProcessorValueTreeState apvts;
+    AudioFormatManager formatManager;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessor)
 };
