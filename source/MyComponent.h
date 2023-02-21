@@ -6,7 +6,6 @@
 
 #include <JuceHeader.h>
 
-
 class MyComponent : public Component
 {
 public:
@@ -34,7 +33,20 @@ public:
 
     };
 
+    void mouseDown (const MouseEvent& e) override {
+        dragger.startDraggingComponent (this, e);
+    };
+
+    void mouseDrag (const MouseEvent& e) override {
+        dragger.dragComponent (this, e, nullptr);
+    };
+
+    void mouseUp (const MouseEvent& e) override {
+
+    };
+
 private:
+    ComponentDragger dragger;
     Path path;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyComponent)
 };

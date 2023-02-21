@@ -4,20 +4,12 @@
 
 #include "MainComponent.h"
 
-MainComponent::MainComponent()
+MainComponent::MainComponent(AudioProcessorValueTreeState &apvts) : apvts(apvts)
 {
-    setSize(600, 400);
-    setAudioChannels(0, 2);
-
     addAndMakeVisible(myComp);
-
     setBackgroundColour(Colour(0x1F, 0x1F, 0x1F));
     startPeriodicRepaint(60);
-}
-
-MainComponent::~MainComponent()
-{
-    shutdownAudio();
+    this->apvts.addParameterListener("pos1", this);
 }
 
 void MainComponent::paint(juce::Graphics &g)
@@ -27,38 +19,13 @@ void MainComponent::paint(juce::Graphics &g)
 
 void MainComponent::resized()
 {
-    auto bounds{getLocalBounds()};
-    myComp.setBounds(bounds);
+    myComp.setBounds(rect);
 }
 
-void MainComponent::prepareToPlay(int samplesPerBlockExpected, double newSampleRate)
+void MainComponent::parameterChanged(const String &parameterID, float newValue)
 {
-    sampleRate = newSampleRate;
-    expectedSamplesPerBlock = samplesPerBlockExpected;
-    phaseDelta = (float) (MathConstants<double>::twoPi * frequency / sampleRate);
-}
-
-void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill)
-{
-    bufferToFill.clearActiveBufferRegion();
-    auto originalPhase = phase;
-
-    for (auto chan = 0; chan < bufferToFill.buffer->getNumChannels(); ++chan)
-    {
-        phase = originalPhase;
-
-        auto *channelData = bufferToFill.buffer->getWritePointer(chan, bufferToFill.startSample);
-
-        for (auto i = 0; i < bufferToFill.numSamples; ++i)
-        {
-            channelData[i] = 0.5 * std::sin(phase);
-
-            // increment the phase step for the next sample
-            phase = std::fmod(phase + phaseDelta, MathConstants<float>::twoPi);
-        }
-    }
-}
-
-void MainComponent::releaseResources()
-{
+    const MessageManagerLock mmLock;
+    // the event loop will now be locked so it's safe to make a few calls..
+    myComp.setBounds (Rectangle<int> ((int)newValue, (int)newValue,100, 100));
+    myComp.repaint();
 }

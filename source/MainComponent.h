@@ -9,19 +9,19 @@
 #include "NanovgComponent.h"
 #include "MyComponent.h"
 
-class MainComponent : public NanovgComponent
+class MainComponent : public NanovgComponent, AudioProcessorValueTreeState::Listener
 {
 public:
 
-    MainComponent();
-    ~MainComponent() override;
+    MainComponent(AudioProcessorValueTreeState& apvts);
 
     void paint (juce::Graphics&) override;
     void resized() override;
+    void parameterChanged (const String& parameterID, float newValue) override;
 
-    void prepareToPlay (int samplesPerBlockExpected, double sampleRate) override;
-    void releaseResources() override;
-    void getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill) override;
+    // void prepareToPlay (int samplesPerBlockExpected, double sampleRate) override;
+    // void releaseResources() override;
+    // void getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill) override;
 
 private:
     MyComponent myComp;
@@ -32,7 +32,13 @@ private:
 
     double sampleRate = 0.0;
     int expectedSamplesPerBlock = 0;
+    int counter = 0;
     Point<float> lastMousePosition;
+
+    Rectangle<int> rect{0, 0, 100, 100};
+
+    AudioProcessorValueTreeState& apvts;
+
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
