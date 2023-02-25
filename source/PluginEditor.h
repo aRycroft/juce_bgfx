@@ -15,25 +15,25 @@
 
 //==============================================================================
 /**
-*/
-class MyPluginAudioProcessorEditor  : public juce::AudioProcessorEditor
+ */
+class MyPluginAudioProcessorEditor : public juce::AudioProcessorEditor
 {
 public:
-    MyPluginAudioProcessorEditor (MyPluginAudioProcessor&, juce::AudioProcessorValueTreeState&);
-    ~MyPluginAudioProcessorEditor() override;
+  MyPluginAudioProcessorEditor(MyPluginAudioProcessor &, juce::AudioProcessorValueTreeState &);
+  ~MyPluginAudioProcessorEditor() override;
 
-    //==============================================================================
-    void paint (juce::Graphics&) override;
-    void resized() override;
+  //==============================================================================
+  void paint(juce::Graphics &) override;
+  void resized() override;
 
 private:
-    // This reference is provided as a quick way for your editor to
-    // access the processor object that created it.
-    MyPluginAudioProcessor& audioProcessor;
+  // This reference is provided as a quick way for your editor to
+  // access the processor object that created it.
+  MyPluginAudioProcessor &audioProcessor;
 
-    MainComponent mainComponent;
+  MainComponent mainComponent;
 
-    AudioProcessorValueTreeState& apvts;
+  AudioProcessorValueTreeState &apvts;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessorEditor)
+  JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MyPluginAudioProcessorEditor)
 };

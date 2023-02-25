@@ -6,18 +6,19 @@
 
 #include <JuceHeader.h>
 
+#include "PluginProcessor.h"
 #include "NanovgComponent.h"
 #include "MyComponent.h"
 
 class MainComponent : public NanovgComponent, AudioProcessorValueTreeState::Listener
 {
 public:
+    MainComponent(MyPluginAudioProcessor&, AudioProcessorValueTreeState &apvts);
 
-    MainComponent(AudioProcessorValueTreeState& apvts);
-
-    void paint (juce::Graphics&) override;
+    void paint(juce::Graphics &) override;
     void resized() override;
-    void parameterChanged (const String& parameterID, float newValue) override;
+    void parameterChanged(const String &parameterID, float newValue) override;
+    void mouseDown(const MouseEvent &event) override;
 
     // void prepareToPlay (int samplesPerBlockExpected, double sampleRate) override;
     // void releaseResources() override;
@@ -25,10 +26,10 @@ public:
 
 private:
     MyComponent myComp;
-    float phase       = 0.0f;
-    float phaseDelta  = 0.0f;
-    float frequency   = 5000.0f;
-    float amplitude   = 0.2f;
+    float phase = 0.0f;
+    float phaseDelta = 0.0f;
+    float frequency = 5000.0f;
+    float amplitude = 0.2f;
 
     double sampleRate = 0.0;
     int expectedSamplesPerBlock = 0;
@@ -37,8 +38,9 @@ private:
 
     Rectangle<int> rect{0, 0, 100, 100};
 
-    AudioProcessorValueTreeState& apvts;
+    AudioProcessorValueTreeState &apvts;
 
-    
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
+    MyPluginAudioProcessor &audioProcessor;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };

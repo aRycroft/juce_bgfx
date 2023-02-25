@@ -56,7 +56,10 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
-
+    //==============================================================================
+    void startGrain(Rectangle<int> bounds, double startPosition);
+    
+    OwnedArray<Grain> grains;
 private:
     //==============================================================================
 
@@ -68,7 +71,7 @@ private:
       };
     }
     int counter{0};
-    Array<Grain> grains;
+    int currentGrainIndex{0};
     Grain testGrain;
     AudioSampleBuffer audioBuffer;
     AudioProcessorValueTreeState apvts;

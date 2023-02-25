@@ -25,7 +25,10 @@ MyPluginAudioProcessor::MyPluginAudioProcessor()
       apvts(*this, nullptr, "Parameters", createParameterLayout())
 {
     formatManager.registerBasicFormats();
-    grains.addArray({Grain(), Grain(), });
+    for (int i{0}; i < 10; i++)
+    {
+        grains.add(new Grain());
+    }
 }
 
 MyPluginAudioProcessor::~MyPluginAudioProcessor()
@@ -99,27 +102,36 @@ void MyPluginAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
 {
     auto file = File("~/Music/Music/Media.localized/Music/Unknown Artist/Unknown Album/647498__josefpres__piano-loops-014-octave-down-long-loop-120-bpm.wav");
     std::unique_ptr<juce::AudioFormatReader> reader(formatManager.createReaderFor(file));
-    audioBuffer.setSize((int)reader->numChannels, (int)reader->lengthInSamples);
-    reader->read(&audioBuffer,                 // [5]
+    AudioSampleBuffer tempBuffer;
+    tempBuffer.setSize((int)reader->numChannels, (int)reader->lengthInSamples);
+    reader->read(&tempBuffer,                  // [5]
                  0,                            //  [5.1]
                  (int)reader->lengthInSamples, //  [5.2]
                  0,                            //  [5.3]
                  true,                         //  [5.4]
                  true);
 
-    for (auto& grain : grains)
+    if (reader->sampleRate != sampleRate)
     {
-        grain.setSampleRate(sampleRate);
-        grain.setGrainLength(50000);
-        grain.setAudioBuffer(&audioBuffer);
-        grain.startGrain();
+        audioBuffer.setSize((int)reader->numChannels, ceil(sampleRate * reader->lengthInSamples / reader->sampleRate));
+
+        for (int i{0}; i < audioBuffer.getNumChannels(); i++)
+        {
+            LinearInterpolator interpolator;
+            interpolator.process(reader->sampleRate / sampleRate, tempBuffer.getReadPointer(i), audioBuffer.getWritePointer(i), audioBuffer.getNumSamples());
+        }
     }
-    testGrain.setSampleRate(sampleRate);
-    testGrain.setGrainLength(5000);
-    testGrain.setAudioBuffer(&audioBuffer);
-    testGrain.startGrain();
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+    else
+    {
+        audioBuffer.makeCopyOf(tempBuffer);
+    }
+
+    for (auto grain : grains)
+    {
+        grain->setSampleRate(sampleRate);
+        grain->setGrainLength(5000);
+        grain->setAudioBuffer(&audioBuffer);
+    }
 }
 
 void MyPluginAudioProcessor::releaseResources()
@@ -175,12 +187,11 @@ void MyPluginAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer, juce
     // Alternatively, you can process the samples with the channels
     // interleaved by keeping the same state.
 
-        for (auto& grain : grains)
-        {
-            grain.fillBuffer(buffer, buffer.getNumSamples());
-        }
-        // ..do something to the data...
-    
+    for (auto grain : grains)
+    {
+        grain->fillBuffer(buffer, buffer.getNumSamples());
+    }
+    // ..do something to the data...
 }
 
 //==============================================================================
@@ -209,6 +220,13 @@ void MyPluginAudioProcessor::setStateInformation(const void *data, int sizeInByt
 }
 
 //==============================================================================
+void MyPluginAudioProcessor::startGrain(Rectangle<int> bounds, double startPosition)
+{
+    grains.getUnchecked(currentGrainIndex++ % grains.size())->startGrain(bounds, startPosition);
+}
+
+//==============================================================================
+
 // This creates new instances of the plugin..
 juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter()
 {

@@ -9,44 +9,44 @@
 class MyComponent : public Component
 {
 public:
-
-    MyComponent(){
-        // path.addTriangle (0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.5f);
-        // path.applyTransform (AffineTransform::rotation (MathConstants<float>::twoPi * 0, 0.5f, 0.5f));
-    };
+    MyComponent(std::function<void(Rectangle<int>)> startGrain) : startGrain(startGrain){
+                                                                      // path.addTriangle (0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.5f);
+                                                                      // path.applyTransform (AffineTransform::rotation (MathConstants<float>::twoPi * 0, 0.5f, 0.5f));
+                                                                      // addMouseListener(this, true);
+                                                                      this->setInterceptsMouseClicks(false, false);
+                                                                  };
     ~MyComponent() override{
 
     };
 
-    void paint (juce::Graphics& g) override{
-        Path path2;
-        path2.addRectangle(getLocalBounds());
-        g.setColour(Colours::aliceblue);
-        g.fillRect(getLocalBounds());
-        g.setColour(Colours::green);
-        g.fillPath(path2);
-        g.setColour(Colours::red);
-        g.fillEllipse(getLocalBounds().toFloat());
+    void paint(juce::Graphics &g) override
+    {
+        g.fillAll(Colours::white);
     };
 
     void resized() override{
 
     };
 
-    void mouseDown (const MouseEvent& e) override {
-        dragger.startDraggingComponent (this, e);
+    void mouseDown(const MouseEvent &e) override{
+ // dragger.startDraggingComponent (this, e);
+        // if (e.mods.isLeftButtonDown())
+        // {
+        //     DBG("start MOUSE EVENT ----- " << e.x << " " << e.y);
+        //     startGrain(Rectangle<int>(e.x, e.y, 100, 100));
+        // }
     };
 
-    void mouseDrag (const MouseEvent& e) override {
-        dragger.dragComponent (this, e, nullptr);
-    };
+    void mouseDrag(const MouseEvent &e) override{};
 
-    void mouseUp (const MouseEvent& e) override {
-
+    void mouseUp(const MouseEvent &e) override
+    {
+       
     };
 
 private:
-    ComponentDragger dragger;
+    // ComponentDragger dragger;
     Path path;
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyComponent)
+    std::function<void(Rectangle<int>)> startGrain;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MyComponent)
 };
